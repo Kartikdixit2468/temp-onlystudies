@@ -5,3 +5,4 @@ google-generativeai
 manim-voiceover[gtts]
 moviepy
 openai
+requests

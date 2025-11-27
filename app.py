@@ -122,17 +122,38 @@ if st.button("Generate Lesson"):
         generate_video(topic, subject, quality, voice_preset)
 
 # Display Video and Feedback if available
-if st.session_state.video_path and os.path.exists(st.session_state.video_path):
-    st.success("🎉 Video Ready!")
-    st.video(st.session_state.video_path)
+if st.session_state.video_path:
+    # Check if it's a URL or local path
+    is_url = st.session_state.video_path.startswith("http")
     
-    with open(st.session_state.video_path, "rb") as file:
-        st.download_button(
-            label="Download MP4",
-            data=file,
-            file_name=f"{st.session_state.current_topic.replace(' ', '_')}_lesson.mp4",
-            mime="video/mp4"
-        )
+    if is_url or os.path.exists(st.session_state.video_path):
+        st.success("🎉 Video Ready!")
+        st.video(st.session_state.video_path)
+        
+        # Download button logic
+        if is_url:
+            import requests
+            try:
+                response = requests.get(st.session_state.video_path)
+                if response.status_code == 200:
+                    st.download_button(
+                        label="Download MP4",
+                        data=response.content,
+                        file_name=f"{st.session_state.current_topic.replace(' ', '_')}_lesson.mp4",
+                        mime="video/mp4"
+                    )
+                else:
+                    st.error("Could not fetch video for download.")
+            except Exception as e:
+                st.error(f"Error fetching video: {e}")
+        else:
+            with open(st.session_state.video_path, "rb") as file:
+                st.download_button(
+                    label="Download MP4",
+                    data=file,
+                    file_name=f"{st.session_state.current_topic.replace(' ', '_')}_lesson.mp4",
+                    mime="video/mp4"
+                )
     
     st.divider()
     st.write("### Feedback")

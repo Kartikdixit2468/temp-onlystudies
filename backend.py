@@ -4,6 +4,10 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 import time
 from google.api_core import exceptions
+import requests
+import base64
+import uuid
+from datetime import datetime
 
 load_dotenv()
 
@@ -21,6 +25,47 @@ def get_model(quality):
 
 def get_fallback_model():
     return genai.GenerativeModel('gemini-2.0-flash-lite')
+
+def upload_to_github(file_path, repo_name, token, commit_message="Upload generated video"):
+    """
+    Uploads a file to a GitHub repository.
+    Returns the download URL of the uploaded file.
+    """
+    if not os.path.exists(file_path):
+        return None, "File not found"
+
+    with open(file_path, "rb") as f:
+        content = f.read()
+    
+    encoded_content = base64.b64encode(content).decode("utf-8")
+    
+    # Generate a unique path in the repo to avoid conflicts and keep history
+    filename = os.path.basename(file_path)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    unique_filename = f"{os.path.splitext(filename)[0]}_{timestamp}_{uuid.uuid4().hex[:6]}{os.path.splitext(filename)[1]}"
+    path_in_repo = f"generated_videos/{unique_filename}"
+    
+    url = f"https://api.github.com/repos/{repo_name}/contents/{path_in_repo}"
+    
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+    
+    data = {
+        "message": commit_message,
+        "content": encoded_content
+    }
+    
+    response = requests.put(url, headers=headers, json=data)
+    
+    if response.status_code in [200, 201]:
+        # Return the download URL. For public repos, raw_url is good.
+        # For private, we might need the 'download_url' from response which might be a tokenized link or raw link.
+        # The 'download_url' in the response is usually the raw.githubusercontent.com link.
+        return response.json().get("content", {}).get("download_url") or response.json().get("download_url"), None
+    else:
+        return None, f"GitHub upload failed: {response.status_code} - {response.text}"
 
 class Artist:
     @staticmethod
@@ -172,8 +217,29 @@ class Studio:
                     break
         
         if found_path:
-            Editor.remove_partial_files()
-            return True, "", found_path
+            # Upload to GitHub
+            github_token = os.getenv("GITHUB_TOKEN")
+            github_repo = os.getenv("GITHUB_REPO")
+            
+            if not github_token or not github_repo:
+                 # Fallback to local if no credentials (though user asked for GitHub storage)
+                 # But we should probably warn or error. For now, let's assume they exist as per plan.
+                 return False, "GITHUB_TOKEN or GITHUB_REPO not set in environment variables.", None
+
+            url, upload_error = upload_to_github(found_path, github_repo, github_token)
+            
+            if url:
+                # Cleanup local file
+                try:
+                    os.remove(found_path)
+                except Exception as e:
+                    print(f"Error removing local file: {e}")
+                
+                Editor.remove_partial_files()
+                return True, "", url
+            else:
+                Editor.remove_partial_files()
+                return False, f"Rendered but upload failed: {upload_error}", None
         else:
             Editor.remove_partial_files()
             return False, "Rendered successfully but could not locate output file.", None
