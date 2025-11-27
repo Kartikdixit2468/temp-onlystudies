@@ -6,3 +6,5 @@ manim-voiceover[gtts]
 moviepy
 openai
 requests
+setuptools
+
