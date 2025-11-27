@@ -90,8 +90,101 @@ class VoiceoverArtist:
         else:
             sox_config = ''
         
+        # Few-shot examples to ground the model
+        FEW_SHOT_EXAMPLES = """
+        Example 1:
+        Topic: "The Circle"
+        Code:
+        ```python
+        class SceneTopic(VoiceoverScene):
+            def construct(self):
+                self.set_speech_service(GTTSService(lang="en", tld="com"))
+                
+                with self.voiceover(text="This is a circle. It is the set of all points equidistant from a center."):
+                    circle = Circle(radius=2, color=BLUE)
+                    center = Dot(color=RED)
+                    self.play(Create(circle), Create(center))
+                    
+                with self.voiceover(text="The distance from the center to the edge is called the radius."):
+                    line = Line(center.get_center(), circle.get_right(), color=YELLOW)
+                    label = Text("Radius", font_size=24).next_to(line, UP)
+                    self.play(Create(line), Write(label))
+        ```
+
+        Example 2:
+        Topic: "Bubble Sort"
+        Code:
+        ```python
+        class SceneTopic(VoiceoverScene):
+            def construct(self):
+                self.set_speech_service(GTTSService(lang="en", tld="com"))
+
+                # Create array elements
+                values = [4, 2, 5, 1, 3]
+                squares = VGroup()
+                for i, val in enumerate(values):
+                    sq = Square(side_length=1, color=BLUE)
+                    num = Text(str(val)).move_to(sq.get_center())
+                    group = VGroup(sq, num)
+                    squares.add(group)
+                
+                # Arrange nicely
+                squares.arrange(RIGHT, buff=0.5)
+                
+                with self.voiceover(text="We start with an unsorted array."):
+                    self.play(Create(squares))
+                
+                # Demonstrate Swap (CRITICAL: Use move_to and update list)
+                with self.voiceover(text="The first two elements are out of order, so we swap them."):
+                    # Highlight
+                    self.play(squares[0].animate.set_color(RED), squares[1].animate.set_color(RED))
+                    
+                    # Swap positions visually
+                    self.play(
+                        squares[0].animate.move_to(squares[1].get_center()),
+                        squares[1].animate.move_to(squares[0].get_center())
+                    )
+                    
+                    # Update VGroup list to match visual state
+                    squares.submobjects[0], squares.submobjects[1] = squares.submobjects[1], squares.submobjects[0]
+                    
+                    # Reset color
+                    self.play(squares[0].animate.set_color(BLUE), squares[1].animate.set_color(BLUE))
+        ```
+
+        Example 3:
+        Topic: "Pythagorean Theorem"
+        Code:
+        ```python
+        class SceneTopic(VoiceoverScene):
+            def construct(self):
+                self.set_speech_service(GTTSService(lang="en", tld="com"))
+                
+                with self.voiceover(text="The Pythagorean theorem relates the sides of a right triangle."):
+                    # Create triangle points
+                    p1 = [-1, -1, 0]
+                    p2 = [2, -1, 0]
+                    p3 = [2, 1, 0]
+                    
+                    # Draw triangle
+                    triangle = Polygon(p1, p2, p3, color=WHITE)
+                    self.play(Create(triangle))
+                    
+                    # Add labels (Use next_to for safety)
+                    a_label = Text("a").next_to(Line(p2, p3), RIGHT, buff=0.2)
+                    b_label = Text("b").next_to(Line(p1, p2), DOWN, buff=0.2)
+                    c_label = Text("c").next_to(Line(p1, p3), UP, buff=0.2)
+                    
+                    self.play(Write(a_label), Write(b_label), Write(c_label))
+                    
+                with self.voiceover(text="The square of the hypotenuse equals the sum of squares of the other two sides."):
+                    equation = Text("a² + b² = c²", font_size=48).to_edge(UP)
+                    self.play(Write(equation))
+        ```
+        """
+
         prompt = f"""
-        CONTEXT: Generate a VoiceoverScene for Manim with voice narration instead of text captions.
+        CONTEXT: Generate a VoiceoverScene for Manim with voice narration.
         
         TOPIC TO EXPLAIN: "{topic}"
         SUBJECT AREA: {subject}
@@ -104,6 +197,8 @@ class VoiceoverArtist:
         3. DO NOT display text captions - use voice narration instead
         4. Synchronize animations with voiceover blocks
         5. Keep narration concise and natural-sounding
+        6. **AVOID OVERLAPPING**: Use `.next_to(target, DIRECTION)` or `.shift(VECTOR)` to place elements.
+        7. **CLEANUP**: FadeOut elements before introducing new conflicting ones.
         
         Visual Style:
         - Aesthetic: "Kurzgesagt" or "Vox" style. Flat vector art. Minimalist design.
@@ -111,6 +206,8 @@ class VoiceoverArtist:
         - Focus on visuals: shapes, diagrams, animations (not text)
         - Motion: Smooth, clean animations that sync with voice
         
+        {FEW_SHOT_EXAMPLES}
+
         Scene Structure (All narrated, minimal text):
         
         1. Introduction (15-20 seconds)
@@ -169,13 +266,91 @@ class VoiceoverArtist:
                 code = response.text.replace("```python", "").replace("```", "").strip()
                 return code
             except exceptions.ResourceExhausted:
-                print(f"Quota exceeded on attempt {{attempt + 1}}. Switching to fallback...")
+                print(f"Quota exceeded on attempt {attempt + 1}. Switching to fallback...")
                 model = genai.GenerativeModel('gemini-2.0-flash-lite')
                 time.sleep(2)
             except Exception as e:
                 return f"# Error: {e}"
         
         return "# Error: Failed to generate code after retries"
+
+    @staticmethod
+    def regenerate_video_code(original_code, feedback, topic, subject, quality="Medium"):
+        """
+        Regenerate the video code based on user feedback.
+        """
+        model = get_model(quality)
+        
+        prompt = f"""
+        CONTEXT: You are fixing/improving a Python script for Manim (VoiceoverScene) based on USER FEEDBACK.
+        
+        TOPIC: "{topic}"
+        SUBJECT: "{subject}"
+        
+        THE ORIGINAL CODE:
+        ```python
+        {original_code}
+        ```
+        
+        USER FEEDBACK (The user disliked the previous video because):
+        "{feedback}"
+        
+        INSTRUCTIONS:
+        1. Analyze the original code and the user's feedback.
+        2. Modify the code to ADDRESS the feedback specifically.
+        3. Ensure the core logic still explains the topic correctly.
+        4. Keep the same visual style (Kurzgesagt/Vox, dark background, flat vector).
+        5. Ensure all imports and setup (Voiceover, SoX) remain correct.
+        6. Output ONLY the fixed Python code. No markdown.
+        """
+        
+        for attempt in range(3):
+            try:
+                response = model.generate_content(prompt)
+                code = response.text.replace("```python", "").replace("```", "").strip()
+                return code
+            except exceptions.ResourceExhausted:
+                print(f"Quota exceeded on attempt {attempt + 1}. Switching to fallback...")
+                model = genai.GenerativeModel('gemini-2.0-flash-lite')
+                time.sleep(2)
+            except Exception as e:
+                return f"# Error: {e}"
+        
+        return "# Error: Failed to regenerate code after retries"
+
+    @staticmethod
+    def fix_code(original_code, error_message, topic, quality="Medium"):
+        """
+        Attempt to fix the generated code based on the Manim error message.
+        """
+        model = get_model(quality)
+        
+        prompt = f"""
+        CONTEXT: You are fixing a Python script for Manim (VoiceoverScene).
+        
+        TOPIC: "{topic}"
+        
+        THE CODE THAT FAILED:
+        ```python
+        {original_code}
+        ```
+        
+        THE ERROR MESSAGE:
+        {error_message}
+        
+        INSTRUCTIONS:
+        1. Analyze the error message to understand what went wrong.
+        2. Fix the code to resolve the error.
+        3. Ensure the logic still explains the topic correctly.
+        4. Output ONLY the fixed Python code. No markdown.
+        """
+        
+        try:
+            response = model.generate_content(prompt)
+            code = response.text.replace("```python", "").replace("```", "").strip()
+            return code
+        except Exception as e:
+            return f"# Error fixing code: {e}"
     
     @staticmethod
     def list_voice_presets():

@@ -11,48 +11,59 @@ class SceneTopic(VoiceoverScene):
 
             )
         )
-
-        # Introduction
-        with self.voiceover(text="Let's explore matrix multiplication, a fundamental operation in linear algebra."):
-            title = Text("Matrix Multiplication", font_size=60)
+        
+        # 1. Introduction
+        with self.voiceover(text="Today, we'll explore Dijkstra's algorithm, a powerful tool for finding the shortest path in a graph."):
+            title = Text("Dijkstra's Algorithm", font_size=60, color=GREEN).scale(0.7)
             self.play(Write(title))
             self.wait(2)
             self.play(FadeOut(title))
-            self.wait(0.5)
-
-        # Concept Explanation
-        with self.voiceover(text="Matrix multiplication is not just element-wise. It involves taking the dot product of rows from the first matrix with columns from the second."):
-            matrix_a = Matrix([[1, 2], [3, 4]])
-            matrix_b = Matrix([[5, 6], [7, 8]])
-            self.play(Create(matrix_a), Create(matrix_b))
-            self.play(matrix_a.animate.shift(LEFT * 3), matrix_b.animate.shift(RIGHT * 3))
+        
+        # 2. Concept Explanation
+        with self.voiceover(text="Imagine a map with cities and roads. Dijkstra's algorithm helps us find the shortest route from one city to another."):
+            # Create nodes (cities)
+            nodes = [Dot(point=[i*2 - 3, np.sin(i), 0], color=BLUE, radius=0.2) for i in range(5)]
+            labels = [Text(f"City {i+1}", font_size=24).next_to(nodes[i], DOWN, buff=0.1) for i in range(5)]
+            
+            # Create edges (roads) - manually set positions
+            edges = [
+                Line(nodes[0].get_center(), nodes[1].get_center(), color=WHITE),
+                Line(nodes[0].get_center(), nodes[2].get_center(), color=WHITE),
+                Line(nodes[1].get_center(), nodes[3].get_center(), color=WHITE),
+                Line(nodes[2].get_center(), nodes[3].get_center(), color=WHITE),
+                Line(nodes[3].get_center(), nodes[4].get_center(), color=WHITE),
+                Line(nodes[2].get_center(), nodes[4].get_center(), color=WHITE),
+            ]
+            
+            self.play(*[Create(node) for node in nodes], *[Write(label) for label in labels])
+            self.play(*[Create(edge) for edge in edges])
             self.wait(1)
-
-        with self.voiceover(text="Each element in the resulting matrix is calculated by multiplying corresponding elements and summing the results."):
-            arrow1 = CurvedArrow(matrix_a.get_rows()[0].get_left(), matrix_b.get_columns()[0].get_top(), angle = -PI/2)
-            self.play(Create(arrow1))
-            self.wait(1)
-            self.play(FadeOut(arrow1))
-
-        # Practical Example
-        with self.voiceover(text="For example, let's multiply a 2x2 matrix by another 2x2 matrix."):
-            resulting_matrix = Matrix([[19, 22], [43, 50]])
-            self.play(matrix_a.animate.shift(LEFT * 3), matrix_b.animate.shift(RIGHT * 3), Write(Text("=", font_size = 50).move_to(ORIGIN)))
-            self.play(Write(resulting_matrix.move_to(RIGHT * 3 + RIGHT * 3)))
-            self.wait(1)
-
-        with self.voiceover(text="The element in the first row and first column of the resulting matrix is obtained by multiplying 1 by 5, adding it to 2 multiplied by 7. That's 5 plus 14, which equals 19."):
-            calculation = MathTex("(1*5) + (2*7) = 19").next_to(resulting_matrix, DOWN)
-            self.play(Write(calculation))
+            
+        with self.voiceover(text="It works by assigning a distance value to each city, starting with zero for the starting city and infinity for all others. It then iteratively updates these distances."):
+            self.play(nodes[0].animate.set_color(GREEN), run_time=1)
             self.wait(2)
-            self.play(FadeOut(calculation))
-
-        # Conclusion
-        with self.voiceover(text="So, that's matrix multiplication. It's a core concept for various applications in math, science, and engineering."):
-            self.play(FadeOut(matrix_a), FadeOut(matrix_b), FadeOut(resulting_matrix))
+            
+        # 3. Practical Example
+        with self.voiceover(text="Let's walk through a simple example. We want to find the shortest path from City 1 to City 5. The algorithm explores neighboring cities, calculating distances. It keeps track of the shortest path found so far."):
+            # Assign weights to the edges
+            weights = [5, 2, 1, 4, 2, 6]
+            weight_labels = []
+            for i, edge in enumerate(edges):
+                pos = edge.get_midpoint() + 0.2 * UP
+                label = Text(str(weights[i]), font_size=20, color=YELLOW).move_to(pos)
+                weight_labels.append(label)
+            self.play(*[Write(label) for label in weight_labels])
+            
+            # Highlight path
+            self.play(edges[0].animate.set_color(GREEN), weight_labels[0].animate.set_color(GREEN))
+            self.play(edges[3].animate.set_color(GREEN), weight_labels[3].animate.set_color(GREEN))
+            self.play(edges[4].animate.set_color(GREEN), weight_labels[4].animate.set_color(GREEN))
+            self.wait(2)
+            
+        with self.voiceover(text="By repeatedly selecting the unvisited city with the smallest distance, Dijkstra's algorithm efficiently determines the shortest path to the destination."):
+            self.play(nodes[4].animate.set_color(GREEN), run_time=1)
             self.wait(1)
-
-        with self.voiceover(text="Thank you for watching."):
-            self.play(Write(Text("The End", font_size = 70)))
-            self.wait(1)
-            self.play(FadeOut(Text("The End", font_size = 70)))
+            
+        # 4. Conclusion
+        with self.voiceover(text="In summary, Dijkstra's algorithm provides a systematic way to find the shortest path in a graph, making it useful in various applications, from GPS navigation to network routing."):
+            self.play(*[FadeOut(mob) for mob in self.mobjects])

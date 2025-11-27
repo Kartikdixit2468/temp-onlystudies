@@ -54,6 +54,12 @@ class Artist:
         - No Overlapping: Distinct elements must maintain separation. Do not stack objects on top of each other.
         - Stable Camera: Fixed, locked-off camera angle. No zooming or shaky cam.
 
+        Geometry Rules (STRICT):
+        - Anchor Object: Draw the main shape first (e.g., Triangle) and fix it in the center.
+        - Geometric Snapping: Objects must touch edges precisely. No floating shapes.
+        - Rotation: Shapes attached to diagonal lines must be rotated to match the angle.
+        - Text Safety: Text must appear *outside* the shapes, never overlapping lines.
+
         Scene Description (All sections MUST relate to "{topic}" ONLY):
         1. Definition/Theory: Clear text explanation of "{topic}". Clear the screen afterwards.
         
@@ -97,6 +103,11 @@ class Artist:
             try:
                 response = model.generate_content(prompt)
                 code = response.text.replace("```python", "").replace("```", "").strip()
+                # Ensure essential imports are present
+                if "import math" not in code:
+                    code = "import math\n" + code
+                if "import random" not in code:
+                    code = "import random\n" + code
                 return code
             except exceptions.ResourceExhausted:
                 print(f"Quota exceeded on attempt {attempt + 1}. Switching to fallback model...")
