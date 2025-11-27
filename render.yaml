@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: onlystudies
+    env: docker
+    plan: free
+    region: oregon
+    branch: main
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
