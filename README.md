@@ -7,6 +7,7 @@ OnlyStudies is an AI-powered platform that converts simple text descriptions int
 ## 🚀 Key Features
 - **Automated Video Pipeline**: Generates a complete 3-minute lesson without human intervention.
 - **Intelligent Structuring**: Enforces a proven pedagogical format (Theory, Analogy, Example).
+
 - **Smart Stitching**: Solves the AI "context window" limit by generating 3 separate scenes and stitching them into one seamless MP4.
 - **Sleek UX**: A dark-mode, responsive interface with real-time terminal logs and Lottie loading animations.
 
