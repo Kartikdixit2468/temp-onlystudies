@@ -199,6 +199,7 @@ class VoiceoverArtist:
         5. Keep narration concise and natural-sounding
         6. **AVOID OVERLAPPING**: Use `.next_to(target, DIRECTION)` or `.shift(VECTOR)` to place elements.
         7. **CLEANUP**: FadeOut elements before introducing new conflicting ones.
+        8. **CRITICAL**: Do NOT use `SVGMobject`, `ImageMobject`, or any external assets. Use ONLY built-in Manim shapes (Circle, Square, Line, Polygon, etc.).
         
         Visual Style:
         - Aesthetic: "Kurzgesagt" or "Vox" style. Flat vector art. Minimalist design.
@@ -301,7 +302,8 @@ class VoiceoverArtist:
         3. Ensure the core logic still explains the topic correctly.
         4. Keep the same visual style (Kurzgesagt/Vox, dark background, flat vector).
         5. Ensure all imports and setup (Voiceover, SoX) remain correct.
-        6. Output ONLY the fixed Python code. No markdown.
+        6. **CRITICAL**: Do NOT use `SVGMobject` or `ImageMobject`. Use ONLY built-in shapes.
+        7. Output ONLY the fixed Python code. No markdown.
         """
         
         for attempt in range(3):
@@ -342,7 +344,8 @@ class VoiceoverArtist:
         1. Analyze the error message to understand what went wrong.
         2. Fix the code to resolve the error.
         3. Ensure the logic still explains the topic correctly.
-        4. Output ONLY the fixed Python code. No markdown.
+        4. **CRITICAL**: Do NOT use `SVGMobject` or `ImageMobject`. Use ONLY built-in shapes.
+        5. Output ONLY the fixed Python code. No markdown.
         """
         
         try:

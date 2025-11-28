@@ -132,7 +132,7 @@ class Artist:
            - **CRITICAL**: Clear the screen of previous text/shapes before starting the example
            - **CRITICAL**: The example MUST demonstrate "{topic}" specifically, NOT any other topic
 
-        Negative Prompt: 3D rendering, realistic photography, cinematic depth of field, motion blur, morphing, melting, liquid simulation, chaotic motion, overlapping text, double exposure, illegible text, ghosting, vibrating objects, stacking objects, cluttered, busy, messy, mixing different topics, unrelated examples.
+        Negative Prompt: 3D rendering, realistic photography, cinematic depth of field, motion blur, morphing, melting, liquid simulation, chaotic motion, overlapping text, double exposure, illegible text, ghosting, vibrating objects, stacking objects, cluttered, busy, messy, mixing different topics, unrelated examples, external assets, SVGs, images.
 
         Requirements:
         - The class name must be 'SceneTopic'.
@@ -143,6 +143,7 @@ class Artist:
         - Do NOT include `config.media_width` or similar config settings in the code.
         - Import manim: `from manim import *`
         - VERIFY: All three sections explain/demonstrate "{topic}" ONLY
+        - **CRITICAL**: Do NOT use `SVGMobject`, `ImageMobject`, or any external assets. Use ONLY built-in Manim shapes (Circle, Square, Line, Polygon, etc.).
         """
         for attempt in range(3):
             try:
